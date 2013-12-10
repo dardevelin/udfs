@@ -19,6 +19,7 @@ ADD_EXECUTABLE(
     src/hook_read.c
     src/hook_readdir.c
     src/main.c
+    src/metadata.c
 )
 
 TARGET_LINK_LIBRARIES(

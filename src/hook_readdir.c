@@ -2,9 +2,11 @@
 
 int hook_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
 {
+    UNUSED(offset);
+    UNUSED(fi);
+
     int ok, file_id;
-    (void) offset, fi;
-    
+
     char *basename = strrchr(path, '/') + 1;
     char  dirname[basename-path+1];
     strncpy(dirname, path, basename-path);
@@ -42,7 +44,7 @@ int hook_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offs
     filler(buf, "..", NULL, 0);
 
     /* Get files listing from path */
-    ok = sqlite3_prepare(g_db, "SELECT name FROM files WHERE path=?", 1000, &g_stmt, NULL); //FIXME: every 1000 magic numbers
+    ok = sqlite3_prepare(g_db, "SELECT basename FROM files WHERE dirname=?", UDFS_SIZE_ZSQL, &g_stmt, NULL);
     if (ok != SQLITE_OK) 
         fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
 
