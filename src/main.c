@@ -1,6 +1,8 @@
 #include "main.h"
 
 static const char *hello_path = "/hello";
+sqlite3      *g_db;
+sqlite3_stmt *g_stmt;
 
 static int udfs_getattr(const char *path, struct stat *stbuf)
 {
@@ -14,8 +16,13 @@ static int udfs_getattr(const char *path, struct stat *stbuf)
         stbuf->st_mode = S_IFREG | 0444;
         stbuf->st_nlink = 1;
         stbuf->st_size = 10747; /* file size */
-    } else
-        res = -ENOENT;
+    } else {
+        /* Everything else */
+        stbuf->st_mode = S_IFREG | 0444;
+        stbuf->st_nlink = 1;
+        stbuf->st_size = 10; /* file size */
+    }
+        //res = -ENOENT;
 
     return res;
 }
@@ -32,12 +39,17 @@ static int udfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     filler(buf, ".", NULL, 0);
     filler(buf, "..", NULL, 0);
     filler(buf, hello_path + 1, NULL, 0);
+    filler(buf, "testa", NULL, 0);
+    filler(buf, "testb", NULL, 0);
+    filler(buf, "testc", NULL, 0);
 
     return 0;
 }
 
 static int udfs_open(const char *path, struct fuse_file_info *fi)
 {
+    return 0;
+
     if (strcmp(path, hello_path) != 0)
         return -ENOENT;
 
@@ -50,28 +62,32 @@ static int udfs_open(const char *path, struct fuse_file_info *fi)
 static int udfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
     (void) fi;
-    /*
-    size_t len = 0;
-    int ch;
 
-    //if(strcmp(path, hello_path) != 0) {
-    //  return -ENOENT;
-    //}
+    printf("Reading file: %s\n", path);
+
+    /* Get file id from name */
+    int ok, file_id;
+    char *filename = strrchr(path, '/') + 1;
     
-    char *p      = buf;
-    FILE *fp     = fopen("/home/nitrix/projects/udfs/build/test.jpg", "r"); // read mode
-    if (!fp) {
-        fprintf(stderr, "Error while opening the file.\n");
-        exit(EXIT_FAILURE);
+    ok = sqlite3_prepare(g_db, "SELECT id FROM files WHERE path=? AND name=?", 200, &g_stmt, NULL);
+    if (ok != SQLITE_OK) 
+        fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+
+    ok = sqlite3_bind_text(g_stmt, 1, path, filename-path, SQLITE_STATIC);
+    if (ok != SQLITE_OK) 
+        fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+
+    ok = sqlite3_bind_text(g_stmt, 2, filename, -1, SQLITE_STATIC);
+    if (ok != SQLITE_OK) 
+        fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+
+    if (sqlite3_step(g_stmt) == SQLITE_ROW) {
+        file_id = sqlite3_column_int(g_stmt, 0);
+        printf("File id: %u\n", file_id);
+    } else {
+        fprintf(stderr, "Error: no existing metadata for this file\n");
+        return -ENOENT;
     }
-    fseek(fp, offset, SEEK_SET);
-    while ((ch=fgetc(fp)) != EOF && len < size) {
-        *p = ch;
-        p++;
-        len++;
-    }
-    fclose(fp);
-    */
 
     return size;
 }
@@ -85,6 +101,15 @@ static struct fuse_operations g_operations = {
 
 int main(int argc, char **argv)
 {
-    printf("Hello World!\n"); 
-    return fuse_main(argc, argv, &g_operations, NULL);
+    printf("Loading metadata database...\n");
+    int ok = sqlite3_open_v2("metadata.db", &g_db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, NULL);
+    if (ok != SQLITE_OK) {
+        fprintf(stderr, "%s", sqlite3_errmsg(g_db));
+    }
+
+    printf("Mounting filesystem...\n"); 
+    fuse_main(argc, argv, &g_operations, NULL);
+    sqlite3_close(g_db);
+
+    return EXIT_SUCCESS;
 }

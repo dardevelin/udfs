@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <fuse.h>
-
+#include <libgen.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
