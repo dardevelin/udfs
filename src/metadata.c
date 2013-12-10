@@ -1,6 +1,29 @@
 #include "metadata.h"
 
-struct udfs_metadata udfs_metadata_query(const char *path)
+void udfs_metadata_file_filler(const char *dirname, void *buf, fuse_fill_dir_t filler)
+{
+    int ok;
+
+    /* Get file listing for dirname */
+    ok = sqlite3_prepare(g_db, "SELECT basename FROM files WHERE dirname=?", UDFS_SIZE_ZSQL, &g_stmt, NULL);
+    if (ok != SQLITE_OK) 
+        fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+
+    ok = sqlite3_bind_text(g_stmt, 1, dirname, -1, SQLITE_STATIC);
+    if (ok != SQLITE_OK) 
+        fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+
+    while (sqlite3_step(g_stmt) == SQLITE_ROW) {
+        const unsigned char *name = sqlite3_column_text(g_stmt, 0);
+        if (name[0]) {
+            filler(buf, (char*)name, NULL, 0);
+        }
+    }
+    
+    sqlite3_reset(g_stmt);
+}
+
+struct udfs_file udfs_metadata_file_query(const char *path)
 {
     int ok;
 
@@ -14,7 +37,7 @@ struct udfs_metadata udfs_metadata_query(const char *path)
     }
 
     /* Prepare metadata object */
-    struct udfs_metadata metadata = {0};
+    struct udfs_file file = {0};
     
     /* Query sqlite database for file metadata */
     ok = sqlite3_prepare(g_db, "SELECT id, type, mode, size FROM files WHERE dirname=? AND basename=?", UDFS_SIZE_ZSQL, &g_stmt, NULL);
@@ -30,17 +53,17 @@ struct udfs_metadata udfs_metadata_query(const char *path)
         fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
 
     if (sqlite3_step(g_stmt) == SQLITE_ROW) {
-        metadata.id    = sqlite3_column_int(g_stmt, 0);
-        metadata.type  = sqlite3_column_int(g_stmt, 1);
-        metadata.mode  = sqlite3_column_int(g_stmt, 2);
-        metadata.size  = sqlite3_column_int(g_stmt, 3);
-        metadata.found = true;
+        file.id    = sqlite3_column_int(g_stmt, 0);
+        file.type  = sqlite3_column_int(g_stmt, 1);
+        file.mode  = sqlite3_column_int(g_stmt, 2);
+        file.size  = sqlite3_column_int(g_stmt, 3);
+        file.found = true;
     } else {
-        metadata.found = false;
+        file.found = false;
     }
 
     sqlite3_reset(g_stmt);
-    return metadata;
+    return file;
 }
 
 void udfs_metadata_fini(void)

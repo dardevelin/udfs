@@ -5,8 +5,8 @@ int hook_read(const char *path, char *buf, size_t size, off_t offset, struct fus
     UNUSED(fi);
 
     /* Get file id */
-    struct udfs_metadata metadata = udfs_metadata_query(path);
-    if (metadata.found) {
+    struct udfs_file file = udfs_metadata_file_query(path);
+    if (file.found) {
         //printf("File id: %u\n", metadata.id);
     } else {
         fprintf(stderr, "Error: no existing metadata for this file\n");
@@ -18,5 +18,5 @@ int hook_read(const char *path, char *buf, size_t size, off_t offset, struct fus
      * TODO: write data to buf - calculated from size and offset
      */
 
-    return metadata.size;
+    return file.size;
 }

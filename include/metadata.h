@@ -12,7 +12,7 @@ enum {
     UDFS_TYPE_DIR  = 1,
 };
 
-struct udfs_metadata {
+struct udfs_file {
     int  id;
     int  type;
     int  mode;
@@ -20,9 +20,10 @@ struct udfs_metadata {
     bool found;
 };
 
-struct udfs_metadata udfs_metadata_query(const char *path);
-void                 udfs_metadata_init(void);
-void                 udfs_metadata_fini(void);
+struct udfs_file udfs_metadata_file_query(const char *path);
+void             udfs_metadata_file_filler(const char *dirname, void *buf, fuse_fill_dir_t filler);
+void             udfs_metadata_init(void);
+void             udfs_metadata_fini(void);
 
 #endif /* METADATA_H */
 

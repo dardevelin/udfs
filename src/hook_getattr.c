@@ -6,15 +6,15 @@ int hook_getattr(const char *path, struct stat *stbuf)
     memset(stbuf, 0, sizeof(struct stat));
     
     /* Query metadata */
-    struct udfs_metadata metadata = udfs_metadata_query(path);    
+    struct udfs_file file = udfs_metadata_file_query(path);    
 
     /* Return an error if not found */
-    if (!metadata.found) {
+    if (!file.found) {
         return -ENOENT;
     }
 
     /* Fill the struct stat object */
-    switch (metadata.type) {
+    switch (file.type) {
         case UDFS_TYPE_DIR:
             stbuf->st_mode = S_IFDIR;
             stbuf->st_nlink = 2;
@@ -25,8 +25,8 @@ int hook_getattr(const char *path, struct stat *stbuf)
             stbuf->st_nlink = 1;
             break;
     }
-    stbuf->st_mode |= metadata.mode;
-    stbuf->st_size  = metadata.size;
+    stbuf->st_mode |= file.mode;
+    stbuf->st_size  = file.size;
 
     return 0;
 }
