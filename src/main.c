@@ -6,43 +6,121 @@ sqlite3_stmt *g_stmt;
 
 static int udfs_getattr(const char *path, struct stat *stbuf)
 {
-    int res = 0;
+    int ok, res = 0, type, mode, size;
 
-    memset(stbuf, 0, sizeof(struct stat));
-    if (strcmp(path, "/") == 0) {
-        stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = 2;
-    } else if (strcmp(path, hello_path) == 0) {
-        stbuf->st_mode = S_IFREG | 0444;
-        stbuf->st_nlink = 1;
-        stbuf->st_size = 10747; /* file size */
-    } else {
-        /* Everything else */
-        stbuf->st_mode = S_IFREG | 0444;
-        stbuf->st_nlink = 1;
-        stbuf->st_size = 10; /* file size */
+    char *basename = strrchr(path, '/') + 1;
+    char  dirname[basename-path+1];
+    strncpy(dirname, path, basename-path);
+    dirname[basename-path] = 0;
+
+    // Strip the trailing slash if there's one; but don't if the string is "/"
+    if (basename-path-1 > 0) {
+        dirname[basename-path-1] = 0;
     }
-        //res = -ENOENT;
 
+    printf("Getting attributes for path %s\n", path);
+    memset(stbuf, 0, sizeof(struct stat));
+
+    /* Query type and size of a file */
+    ok = sqlite3_prepare(g_db, "SELECT type, mode, size FROM files WHERE path=? AND name=?", 1000, &g_stmt, NULL);
+    if (ok != SQLITE_OK) 
+        fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+
+    ok = sqlite3_bind_text(g_stmt, 1, dirname, -1, SQLITE_STATIC);
+    if (ok != SQLITE_OK) 
+        fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+    
+    ok = sqlite3_bind_text(g_stmt, 2, basename, -1, SQLITE_STATIC);
+    if (ok != SQLITE_OK) 
+        fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+
+    if (sqlite3_step(g_stmt) == SQLITE_ROW) {
+        type = sqlite3_column_int(g_stmt, 0);
+        mode = sqlite3_column_int(g_stmt, 1);
+        size = sqlite3_column_int(g_stmt, 2);
+
+        switch (type) {
+            case UDFS_TYPE_DIR:
+                stbuf->st_mode = S_IFDIR;
+                stbuf->st_nlink = 2;
+                break;
+            default:
+            case UDFS_TYPE_FILE:
+                stbuf->st_mode = S_IFREG;
+                stbuf->st_nlink = 1;
+                break;
+        }
+        
+        stbuf->st_mode |= mode;
+        stbuf->st_size = size;
+    } else {
+        printf("> problem\n");
+        sqlite3_reset(g_stmt);
+        return -ENOENT;
+    }
+
+    sqlite3_reset(g_stmt);
     return res;
 }
 
-static int udfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-        off_t offset, struct fuse_file_info *fi)
+static int udfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
 {
-    (void) offset;
-    (void) fi;
+    int ok, file_id;
+    (void) offset, fi;
+    
+    char *basename = strrchr(path, '/') + 1;
+    char  dirname[basename-path+1];
+    strncpy(dirname, path, basename-path);
+    dirname[basename-path] = 0;
 
-    if (strcmp(path, "/") != 0)
-        return -ENOENT;
+    printf("Listing files in path: %s\n", path);
 
+    /* Check if the directory exists */
+    /* FIXME: may not be necssary, maybe this is called only when it's assurely a directory
+    if (length > 0) {
+        ok = sqlite3_prepare(g_db, "SELECT id FROM files WHERE path=? AND name=? AND type=?", 1000, &g_stmt, NULL);
+        if (ok != SQLITE_OK) 
+            fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+
+        ok = sqlite3_bind_text(g_stmt, 1, path, length, SQLITE_STATIC);
+        if (ok != SQLITE_OK) 
+            fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+        
+        ok = sqlite3_bind_text(g_stmt, 2, filename, -1, SQLITE_STATIC);
+        if (ok != SQLITE_OK) 
+            fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+        
+        ok = sqlite3_bind_int(g_stmt, 3, UDFS_TYPE_DIR);
+        if (ok != SQLITE_OK) 
+            fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+
+        if (sqlite3_step(g_stmt) != SQLITE_ROW) {
+            return -ENOENT;
+        }
+    }
+    */
+    
+    /* Standard files */
     filler(buf, ".", NULL, 0);
     filler(buf, "..", NULL, 0);
-    filler(buf, hello_path + 1, NULL, 0);
-    filler(buf, "testa", NULL, 0);
-    filler(buf, "testb", NULL, 0);
-    filler(buf, "testc", NULL, 0);
 
+    /* Get files listing from path */
+    ok = sqlite3_prepare(g_db, "SELECT name FROM files WHERE path=?", 1000, &g_stmt, NULL); //FIXME: every 1000 magic numbers
+    if (ok != SQLITE_OK) 
+        fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+
+    ok = sqlite3_bind_text(g_stmt, 1, path, -1, SQLITE_STATIC);
+    if (ok != SQLITE_OK) 
+        fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+
+    while (sqlite3_step(g_stmt) == SQLITE_ROW) {
+        const unsigned char *name = sqlite3_column_text(g_stmt, 0);
+        if (name[0]) {
+            filler(buf, (char*)name, NULL, 0);
+        }
+    }
+    
+    sqlite3_reset(g_stmt);
     return 0;
 }
 
@@ -89,14 +167,15 @@ static int udfs_read(const char *path, char *buf, size_t size, off_t offset, str
         return -ENOENT;
     }
 
+    sqlite3_reset(g_stmt);
     return size;
 }
 
 static struct fuse_operations g_operations = {
-    .getattr = udfs_getattr,    
-    .readdir = udfs_readdir,
-    .open    = udfs_open,
-    .read    = udfs_read,
+    .getattr  = udfs_getattr,    
+    .readdir  = udfs_readdir,
+    .open     = udfs_open,
+    .read     = udfs_read,
 };
 
 int main(int argc, char **argv)

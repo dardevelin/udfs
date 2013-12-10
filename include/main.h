@@ -14,6 +14,11 @@
 
 #include "sqlite3.h"
 
+enum {
+    UDFS_TYPE_FILE = 0,
+    UDFS_TYPE_DIR  = 1,
+};
+
 int main(int argc, char **argv);
 
 static int udfs_getattr(const char *path, struct stat *stbuf);
