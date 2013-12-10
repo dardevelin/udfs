@@ -14,6 +14,10 @@ INCLUDE_DIRECTORIES(
 
 ADD_EXECUTABLE(
     udfs
+    src/hook_getattr.c
+    src/hook_open.c
+    src/hook_read.c
+    src/hook_readdir.c
     src/main.c
 )
 

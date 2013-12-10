@@ -14,16 +14,11 @@
 
 #include "sqlite3.h"
 
-enum {
-    UDFS_TYPE_FILE = 0,
-    UDFS_TYPE_DIR  = 1,
-};
+#include "hook_getattr.h"
+#include "hook_open.h"
+#include "hook_read.h"
+#include "hook_readdir.h"
 
 int main(int argc, char **argv);
-
-static int udfs_getattr(const char *path, struct stat *stbuf);
-static int udfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi);
-static int udfs_open(const char *path, struct fuse_file_info *fi);
-static int udfs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
 
 #endif /* MAIN_H */
