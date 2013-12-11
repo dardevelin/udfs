@@ -7,7 +7,7 @@
 sqlite3      *g_db;
 sqlite3_stmt *g_stmt;
 
-enum {
+enum utfs_type {
     UDFS_TYPE_FILE = 0,
     UDFS_TYPE_DIR  = 1,
 };
@@ -22,6 +22,7 @@ struct udfs_file {
 
 struct udfs_file udfs_metadata_file_query(const char *path);
 void             udfs_metadata_file_filler(const char *dirname, void *buf, fuse_fill_dir_t filler);
+int              udfs_metadata_file_add(const char *path, enum utfs_type type, int mode, int size);
 void             udfs_metadata_init(void);
 void             udfs_metadata_fini(void);
 

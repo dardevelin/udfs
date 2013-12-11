@@ -14,10 +14,15 @@ INCLUDE_DIRECTORIES(
 
 ADD_EXECUTABLE(
     udfs
+    src/hook_chmod.c
+    src/hook_chown.c
     src/hook_getattr.c
+    src/hook_mkdir.c
+    src/hook_mknod.c
     src/hook_open.c
     src/hook_read.c
     src/hook_readdir.c
+    src/hook_utimens.c
     src/main.c
     src/metadata.c
 )

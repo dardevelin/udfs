@@ -5,6 +5,11 @@ static struct fuse_operations g_operations = {
     .readdir  = hook_readdir,
     .open     = hook_open,
     .read     = hook_read,
+    .mkdir    = hook_mkdir,
+    .mknod    = hook_mknod,
+    .chown    = hook_chown,
+    .chmod    = hook_chmod,
+    .utimens  = hook_utimens
 };
 
 int main(int argc, char **argv)
