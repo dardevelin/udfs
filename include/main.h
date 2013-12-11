@@ -10,6 +10,9 @@
 #include "hook_open.h"
 #include "hook_read.h"
 #include "hook_readdir.h"
+#include "hook_rename.h"
+#include "hook_rmdir.h"
+#include "hook_unlink.h"
 #include "hook_utimens.h"
 #include "metadata.h"
 

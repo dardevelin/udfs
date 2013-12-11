@@ -22,6 +22,9 @@ ADD_EXECUTABLE(
     src/hook_open.c
     src/hook_read.c
     src/hook_readdir.c
+    src/hook_rename.c
+    src/hook_rmdir.c
+    src/hook_unlink.c
     src/hook_utimens.c
     src/main.c
     src/metadata.c

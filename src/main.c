@@ -1,14 +1,17 @@
 #include "main.h"
 
 static struct fuse_operations g_operations = {
+    .chmod    = hook_chmod,
+    .chown    = hook_chown,
     .getattr  = hook_getattr,    
-    .readdir  = hook_readdir,
-    .open     = hook_open,
-    .read     = hook_read,
     .mkdir    = hook_mkdir,
     .mknod    = hook_mknod,
-    .chown    = hook_chown,
-    .chmod    = hook_chmod,
+    .open     = hook_open,
+    .read     = hook_read,
+    .readdir  = hook_readdir,
+    .rename   = hook_rename,
+    .rmdir    = hook_rmdir,
+    .unlink   = hook_unlink,
     .utimens  = hook_utimens
 };
 

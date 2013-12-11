@@ -23,13 +23,44 @@ void udfs_metadata_file_filler(const char *dirname, void *buf, fuse_fill_dir_t f
     sqlite3_reset(g_stmt);
 }
 
+int udfs_metadata_file_remove(const char *path)
+{
+    int ok;
+
+    /* Generate dirname and basename */
+    char *basename = strrchr(path, '/') + 1;
+    char  dirname[basename-path+1];
+    strncpy(dirname, path, basename-path);
+    dirname[basename-path] = 0;
+    if (basename-path-1 > 0) {
+        dirname[basename-path-1] = 0;
+    }
+    
+    /* Query sqlite database for file metadata */
+    ok = sqlite3_prepare(g_db, "DELETE FROM files WHERE dirname=? AND basename=?", UDFS_SIZE_ZSQL, &g_stmt, NULL);
+    if (ok != SQLITE_OK) 
+        fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+
+    ok = sqlite3_bind_text(g_stmt, 1, dirname, -1, SQLITE_STATIC);
+    if (ok != SQLITE_OK) 
+        fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+    
+    ok = sqlite3_bind_text(g_stmt, 2, basename, -1, SQLITE_STATIC);
+    if (ok != SQLITE_OK) 
+        fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
+
+    sqlite3_step(g_stmt);
+    
+    sqlite3_reset(g_stmt);
+    return 0;
+}
+
 int udfs_metadata_file_add(const char *path, enum utfs_type type, int mode, int size)
 {
     int ok;
 
-    printf("Adding new file %s\n", path);
-
     /* Just make sure the file doesn't already exists */
+    //FIXME: we could use the trick I had in _init to put everything in one sql query and get rid of this code
     struct udfs_file file = udfs_metadata_file_query(path);
     if (file.found) {
         fprintf(stderr, "Error: file already exists\n");
