@@ -27,11 +27,13 @@ int udfs_metadata_file_add(const char *path, enum utfs_type type, int mode, int 
 {
     int ok;
 
+    printf("Adding new file %s\n", path);
+
     /* Just make sure the file doesn't already exists */
     struct udfs_file file = udfs_metadata_file_query(path);
     if (file.found) {
         fprintf(stderr, "Error: file already exists\n");
-        return -1;
+        return -EEXIST;
     }
 
     /* Generate dirname and basename */
@@ -68,12 +70,12 @@ int udfs_metadata_file_add(const char *path, enum utfs_type type, int mode, int 
     if (ok != SQLITE_OK) 
         fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
 
-    if (sqlite3_step(g_stmt) == SQLITE_DONE) {
-        return 0;
+    if (sqlite3_step(g_stmt) != SQLITE_DONE) {
+        return -EEXIST;
     }
 
     sqlite3_reset(g_stmt);
-    return -1;
+    return 0;
 }
 
 struct udfs_file udfs_metadata_file_query(const char *path)
