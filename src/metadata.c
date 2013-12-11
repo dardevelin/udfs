@@ -195,20 +195,24 @@ int udfs_metadata_file_rename(const char *old, const char *new)
         new_dirname[new_basename-new-1] = 0;
     }
 
+    /* Find folder parent id */
+    int old_parent_id = udfs_metadata_file_walk(old_dirname);
+    int new_parent_id = udfs_metadata_file_walk(new_dirname);
+
     /* Query sqlite database to rename the folder entry */
-    ok = sqlite3_prepare(g_db, "UPDATE files SET dirname=?,basename=? WHERE dirname=? AND basename=?", UDFS_SIZE_ZSQL, &g_stmt, NULL);
+    ok = sqlite3_prepare(g_db, "UPDATE files SET name=?,parent_id=? WHERE parent_id=? AND name=?", UDFS_SIZE_ZSQL, &g_stmt, NULL);
     if (ok != SQLITE_OK) 
         fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
 
-    ok = sqlite3_bind_text(g_stmt, 1, new_dirname, -1, SQLITE_STATIC);
+    ok = sqlite3_bind_text(g_stmt, 1, new_basename, -1, SQLITE_STATIC);
     if (ok != SQLITE_OK) 
         fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
     
-    ok = sqlite3_bind_text(g_stmt, 2, new_basename, -1, SQLITE_STATIC);
+    ok = sqlite3_bind_int(g_stmt, 2, new_parent_id);
     if (ok != SQLITE_OK) 
         fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
     
-    ok = sqlite3_bind_text(g_stmt, 3, old_dirname, -1, SQLITE_STATIC);
+    ok = sqlite3_bind_int(g_stmt, 3, old_parent_id);
     if (ok != SQLITE_OK) 
         fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(g_db));
     
