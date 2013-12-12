@@ -14,6 +14,8 @@
 #include <stdbool.h>
 
 #define UDFS_SIZE_ZSQL 1000
+#define UDFS_SIZE_CHUNK 1024
 #define UNUSED(x) ((void)x)
+#define MIN(x,y) (x < y ? x : y)
 
 #endif /* GENERAL_H */

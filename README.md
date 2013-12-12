@@ -1,6 +1,5 @@
 UDFS is a parasite distributed file system in userspace.
 
-It stores its data on internet using multiple steganography methods: from images uploadled on free sites to whitespaces in blog posts.
-You can set a higher goal on files you care the most; the system will always try to stay healthy and make multiple copies for redundancy.
+It stores its data on multiple endpoints and using various steganography methods: from images uploaded on social networks to comments on blog posts.
 
-The result is a virtually unlimited FS, accessible anywhere, with your data encrypted and plausible deniability.
+The result is a virtually unlimited FS, accessible anywhere, with your data encrypted and replicated along with plausible deniability.

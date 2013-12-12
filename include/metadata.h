@@ -24,6 +24,7 @@ struct udfs_file udfs_metadata_file_query(const char *path);
 void             udfs_metadata_file_filler(const char *dirname, void *buf, fuse_fill_dir_t filler);
 int              udfs_metadata_file_add(const char *path, enum utfs_type type, int mode, int size);
 int              udfs_metadata_file_remove(const char *path);
+int              udfs_metadata_file_rename(const char *old, const char *new);
 void             udfs_metadata_init(void);
 void             udfs_metadata_fini(void);
 

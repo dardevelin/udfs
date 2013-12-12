@@ -14,6 +14,7 @@ INCLUDE_DIRECTORIES(
 
 ADD_EXECUTABLE(
     udfs
+    src/chunk.c
     src/hook_chmod.c
     src/hook_chown.c
     src/hook_getattr.c
@@ -26,6 +27,7 @@ ADD_EXECUTABLE(
     src/hook_rmdir.c
     src/hook_unlink.c
     src/hook_utimens.c
+    src/hook_write.c
     src/main.c
     src/metadata.c
 )
@@ -33,6 +35,5 @@ ADD_EXECUTABLE(
 TARGET_LINK_LIBRARIES(
     udfs
     fuse
-    event
     sqlite3
 )

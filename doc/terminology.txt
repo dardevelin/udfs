@@ -1,0 +1,6 @@
+- hook     : is a FUSE callback for an action performed on the file system.
+- metadata : is any informations or book-keeping the file system has to do, stored in an some kind of database.
+- file     : is the equivalent of a real-world file.
+- chunk    : is one part of a file; a file is divided into chunks to manage it more easily and reduce overhead.
+- endpoint : is a method of storing data somewhere on internet.
+- resource : is the unique identifier returned by an endpoint to identify/modify/download our chunk there.

@@ -14,6 +14,7 @@
 #include "hook_rmdir.h"
 #include "hook_unlink.h"
 #include "hook_utimens.h"
+#include "hook_write.h"
 #include "metadata.h"
 
 int main(int argc, char **argv);

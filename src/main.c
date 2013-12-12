@@ -12,7 +12,9 @@ static struct fuse_operations g_operations = {
     .rename   = hook_rename,
     .rmdir    = hook_rmdir,
     .unlink   = hook_unlink,
-    .utimens  = hook_utimens
+    .utimens  = hook_utimens,
+    .write    = hook_write
+    /* FIXME: Need to implement access; triggered when copying a file over one that already exists */
 };
 
 int main(int argc, char **argv)
